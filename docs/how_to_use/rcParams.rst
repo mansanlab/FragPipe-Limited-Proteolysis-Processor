@@ -1,5 +1,5 @@
 rcParams and configuration
-=========================
+==========================
 
 FLiPPR exposes a small configuration dictionary, `rcParams`, defined in `src/flippr/parameters.py`.
 

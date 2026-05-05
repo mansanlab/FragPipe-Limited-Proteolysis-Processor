@@ -28,5 +28,10 @@ Install FLiPPR from source into a recent Python environment (see `pyproject.toml
 
 .. code-block:: bash
 
-    python -m pip install .
+    uv sync
 
+Install the published package into an existing environment:
+
+.. code-block:: bash
+
+    uv pip install flippr

@@ -4,6 +4,7 @@
 
     getting_started
     quickstart
+    tutorial_fragpipe_v24
     examples
     api
     how_to_use/rcParams
