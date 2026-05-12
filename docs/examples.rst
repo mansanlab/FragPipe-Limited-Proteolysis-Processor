@@ -18,7 +18,7 @@ Simple fold-change (LiP only)
     print(res.peptide.head(10))
 
 Fold-change with TrP normalization
----------------------------------
+----------------------------------
 
 If you have matched TrP data (no broad protease), provide it to `Study` and pass TrP args to `add_process`:
 

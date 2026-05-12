@@ -1,11 +1,13 @@
+from __future__ import annotations
+
 from typing import Any
 
 rcParams: dict[str, Any] = {
     "ion.missing_intensity_thresh": 1,
-    "ion.aon_impute_type": "gaussian", # unused for now
+    "ion.aon_impute_type": "gaussian",
     "ion.aon_impute_loc": 1e4,
     "ion.aon_impute_scale": 1e3,
-    "trp_protein.intensity_value": "MaxLFQ Intensity", # unused for dia methods
+    "trp_protein.intensity_value": "MaxLFQ Intensity",
     "trp_protein.fc_sig_tresh": 1.0,
     "trp_protein.pval_sig_tresh": 0.01,
     "protein.fc_sig_thresh": 1.0,

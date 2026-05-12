@@ -1,14 +1,21 @@
+from __future__ import annotations
+
 from pathlib import Path
+from typing import Literal, cast
 from warnings import warn
-from typing import Optional, Literal, cast
 
 from .parameters import _DDA_FP_FILES, _DIA_FP_FILES
 
+type Method = Literal["dda", "dia"]
+type Replicate = int | tuple[int, int] | tuple[tuple[int, ...], tuple[int, ...]]
+type ReplicateKind = Literal["int", "tuple", "tuple_tuple"]
+
+
 def _validate_study(
-    lip: str | Path, 
-    trp: Optional[str | Path], 
-    method: str
-) -> tuple[Path, Optional[Path], str]:
+    lip: str | Path,
+    trp: str | Path | None,
+    method: str,
+) -> tuple[Path, Path | None, Method]:
     method = __validate_method(method)
 
     lip = __validate_fragpipe_path(lip, "lip", method)
@@ -19,87 +26,78 @@ def _validate_study(
     return lip, trp, method
 
 
-def __validate_method(method: str) -> str:
-    """
-    Validate the quantification method.
-
-    """
-
+def __validate_method(method: str) -> Method:
     if not isinstance(method, str):
         raise TypeError(
-            f'`method` was provided: "{method}" with type `{type(method)}`. The type `{type(method)}`is not recognized. Set `method` to "dda" or "dia".'
+            f'`method` was provided: "{method}" with type `{type(method)}`. '
+            'Set `method` to "dda" or "dia".'
         )
 
-    if method not in ["dda", "dia"]:
+    if method not in {"dda", "dia"}:
         raise ValueError(
-            f'`method` was provided: "{method}". "{method}" is not recognized. Set `method` to "dda" or "dia".'
+            f'`method` was provided: "{method}". "{method}" is not recognized. '
+            'Set `method` to "dda" or "dia".'
         )
 
-    return method
+    return cast(Method, method)
 
 
-def __validate_fragpipe_path(path: str | Path, liptrp: str, method: str) -> Path:
-    """
-    Validate FragPipe output directory paths.
-
-    """
-
+def __validate_fragpipe_path(path: str | Path, liptrp: str, method: Method) -> Path:
     if not isinstance(path, (str, Path)):
         raise TypeError(
-            f'`{liptrp}` was provided: "{path}" with type `{type(path)}`. The type `{type(path)}` is not recognized. Set `{liptrp}` to a FragPipe output path.'
+            f'`{liptrp}` was provided: "{path}" with type `{type(path)}`. '
+            f"Set `{liptrp}` to a FragPipe output path."
         )
 
-    # type cast to `Path`
-    # this should have no effect on `Path`
-    path = Path(path)
+    path = Path(path).expanduser()
 
-    # invokes `.exists` and checks for directory-ness
     if not path.is_dir():
         raise ValueError(
-            f'`{liptrp}` was provided: "{path}". "{path}" is not a directory path. Set `{liptrp}` to a FragPipe output directory path.'
+            f'`{liptrp}` was provided: "{path}". "{path}" is not a directory path. '
+            f"Set `{liptrp}` to a FragPipe output directory path."
         )
 
     __validate_fragpipe_files(path, method)
 
-    return Path(path)
+    return path
 
 
-def __validate_fragpipe_files(path: Path, method: str) -> None:
-    """
-    Validate FragPipe output directory path contains all the necessay files.
+def __validate_fragpipe_files(path: Path, method: Method) -> None:
+    required = _DDA_FP_FILES if method == "dda" else _DIA_FP_FILES
 
-    """
+    if all((path / file).exists() for file in required):
+        return
 
-    if method == "dda":
-        if not all([path.joinpath(f).exists() for f in _DDA_FP_FILES]):
-            raise FileNotFoundError(
-                f'Files not found in "{path}". The FragPipe output directory path should minimally contain: \n'
-                + "\t\n".join([f"`{f}`" for f in _DDA_FP_FILES])
-            )
-
-    if method == "dia":
-        if not all([path.joinpath(f).exists() for f in _DIA_FP_FILES]):
-            raise FileNotFoundError(
-                f'Files not found in "{path}". The FragPipe output directory path should minimally contain: \n'
-                + "\t\n".join([f"`{f}`" for f in _DIA_FP_FILES])
-            )
+    missing = [file for file in required if not (path / file).exists()]
+    files = "\n".join(f"- `{file}`" for file in missing)
+    raise FileNotFoundError(
+        f'Files not found in "{path}". Missing required FragPipe output files:\n{files}'
+    )
 
 
-def _validate_replicate(replicate: int | tuple[int, int] | tuple[tuple[int, ...], tuple[int, ...]]) -> Literal["int", "tuple", "tuple_tuple"] | None:
-    """
-    Validate the replicate inputs.
-    
-    """
-
+def _validate_replicate(replicate: Replicate) -> ReplicateKind:
     def __int_validation(i: int) -> None:
-        if i <= 1:
-            raise ValueError(f'Number of replicates was set to `{i}`. Replicate values must be positive and greater than or equal to `2`.')
-        
-        if i == 2:
-            warn("WARNING: Using two replicates will result in an under-powered study.", UserWarning)
-            warn("WARNING: Set flippr.rcParams `ion.missing_intensity_thresh` to `0` for the best results.", UserWarning)
+        if isinstance(i, bool):
+            raise TypeError("Replicate values must be integers, not booleans.")
 
-        
+        if i <= 1:
+            raise ValueError(
+                f"Number of replicates was set to `{i}`. "
+                "Replicate values must be positive and greater than or equal to `2`."
+            )
+
+        if i == 2:
+            warn(
+                "Using two replicates will result in an under-powered study.",
+                UserWarning,
+                stacklevel=2,
+            )
+            warn(
+                "Set flippr.rcParams `ion.missing_intensity_thresh` to `0` for the best results.",
+                UserWarning,
+                stacklevel=2,
+            )
+
     if isinstance(replicate, int):
         __int_validation(replicate)
         return "int"
@@ -108,20 +106,32 @@ def _validate_replicate(replicate: int | tuple[int, int] | tuple[tuple[int, ...]
         replicate = cast(tuple, replicate)
 
         if len(replicate) != 2:
-            raise ValueError(f'Replicate input contains `{len(replicate)}` `{type(replicate)}`. Only `int`, `tuple[int, int]`, or `tuple[tuple[int, ...], tuple[int, ...]]` are allowed.')
+            raise ValueError(
+                f"Replicate input contains `{len(replicate)}` `{type(replicate)}`. "
+                "Only `int`, `tuple[int, int]`, or "
+                "`tuple[tuple[int, ...], tuple[int, ...]]` are allowed."
+            )
 
         if all(isinstance(i, int) for i in replicate):
             replicate = cast(tuple[int, int], replicate)
-            
-            (__int_validation(i) for i in replicate)
+
+            for value in replicate:
+                __int_validation(value)
             return "tuple"
 
-            
         if all(isinstance(i, tuple) for i in replicate):
             replicate = cast(tuple[tuple[int, ...], tuple[int, ...]], replicate)
 
-            if all(all(isinstance(i, int) for i in tup) for tup in replicate):
-                (__int_validation(len(tup)) for tup in replicate)
+            if all(
+                all(isinstance(i, int) and not isinstance(i, bool) for i in tup)
+                for tup in replicate
+            ):
+                for tup in replicate:
+                    __int_validation(len(tup))
                 return "tuple_tuple"
-        
-    raise TypeError(f'Replicate input is of type `{type(replicate)}`. Only `int`, `tuple[int, int]`, or `tuple[tuple[int, ...], tuple[int, ...]]` are allowed.')
+
+    raise TypeError(
+        f"Replicate input is of type `{type(replicate)}`. "
+        "Only `int`, `tuple[int, int]`, or "
+        "`tuple[tuple[int, ...], tuple[int, ...]]` are allowed."
+    )

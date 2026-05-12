@@ -15,21 +15,24 @@ FLiPPR (**F**ragPipe **Li**mited-**P**roteolysis **Pr**ocessor) is modular, fast
 
 FLiPPR is:
 * **Super Fast**: FLiPPR utilizes [Polars](https://pola.rs/) in the back-end to ensure all CPU cores contribute to your data processing.
-* **Convinent to Use**: [FragPipe](https://fragpipe.nesvilab.org/) produces standarized outputs, FLiPPR takes full advantage of this feat and integrates seemlessly with any FragPipe LFQ DDA or DIA anaylsis.
+* **Convenient to Use**: [FragPipe](https://fragpipe.nesvilab.org/) produces standardized outputs, FLiPPR takes full advantage of this feat and integrates seamlessly with any FragPipe LFQ DDA or DIA analysis.
 * **Flexible and Expandable**: Experiments introduce unique and novel variables, FLiPPR ensures compatibility with all experimental setups and gives you full control of the data processing pipeline.
 
 ## Support
-FLiPPR requires python ≥3.10
+FLiPPR requires Python 3.12 or newer.
 To learn more about how FLiPPR can help you analyze your LiP-MS or LFQ data, head over to the [FLiPPR docs](https://fragpipe-limited-proteolysis-processor.readthedocs.io)
 
 ## Installation
 
 ```bash
-    # Initial install
-    python -m pip install flippr
+# Install into the active uv environment
+uv pip install flippr
 
-    # Update to latest release
-    python -m pip install -U flippr
+# Update to the latest release
+uv pip install --upgrade flippr
+
+# Source checkout / development install
+uv sync
 ```
 
 ## Usage

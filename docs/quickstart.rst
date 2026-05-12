@@ -10,7 +10,13 @@ Install from source in a modern Python (see `pyproject.toml`):
 
 .. code-block:: bash
 
-    python -m pip install .
+    uv sync
+
+Install the published package into an existing environment:
+
+.. code-block:: bash
+
+    uv pip install flippr
 
 Basic example
 -------------
